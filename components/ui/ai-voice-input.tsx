@@ -24,6 +24,15 @@ interface AIVoiceInputProps {
   className?: string;
 }
 
+type ProcessingStatus =
+  | "idle"
+  | "recording"
+  | "transcribing"
+  | "processing"
+  | "synthesizing"
+  | "playing"
+  | "error";
+
 export function AIVoiceInput({
   onStart,
   onStop,
@@ -44,6 +53,8 @@ export function AIVoiceInput({
   const [transcript, setTranscript] = useState("");
   const [response, setResponse] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStatus, setProcessingStatus] =
+    useState<ProcessingStatus>("idle");
   const [error, setError] = useState<VoiceAIError | null>(null);
   const mounted = useRef(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -57,6 +68,7 @@ export function AIVoiceInput({
 
     const handleError = (error: VoiceAIError) => {
       setError(error);
+      setProcessingStatus("error");
       onError?.(error);
     };
 
@@ -117,6 +129,69 @@ export function AIVoiceInput({
       .padStart(2, "0")}`;
   };
 
+  const getStatusMessage = () => {
+    switch (processingStatus) {
+      case "idle":
+        return "Click to speak";
+      case "recording":
+        return "Listening...";
+      case "transcribing":
+        return "Transcribing audio...";
+      case "processing":
+        return "Generating response...";
+      case "synthesizing":
+        return "Creating speech...";
+      case "playing":
+        return "Playing response...";
+      case "error":
+        return "Error occurred";
+      default:
+        return "Click to speak";
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (processingStatus) {
+      case "idle":
+        return "text-black/70 dark:text-white/70";
+      case "recording":
+        return "text-blue-600 dark:text-blue-400";
+      case "transcribing":
+        return "text-yellow-600 dark:text-yellow-400";
+      case "processing":
+        return "text-purple-600 dark:text-purple-400";
+      case "synthesizing":
+        return "text-green-600 dark:text-green-400";
+      case "playing":
+        return "text-indigo-600 dark:text-indigo-400";
+      case "error":
+        return "text-red-600 dark:text-red-400";
+      default:
+        return "text-black/70 dark:text-white/70";
+    }
+  };
+
+  const getButtonColor = () => {
+    switch (processingStatus) {
+      case "idle":
+        return "bg-none hover:bg-black/10 dark:hover:bg-white/10";
+      case "recording":
+        return "bg-blue-100 dark:bg-blue-900/20";
+      case "transcribing":
+        return "bg-yellow-100 dark:bg-yellow-900/20";
+      case "processing":
+        return "bg-purple-100 dark:bg-purple-900/20";
+      case "synthesizing":
+        return "bg-green-100 dark:bg-green-900/20";
+      case "playing":
+        return "bg-indigo-100 dark:bg-indigo-900/20";
+      case "error":
+        return "bg-red-100 dark:bg-red-900/20";
+      default:
+        return "bg-none hover:bg-black/10 dark:hover:bg-white/10";
+    }
+  };
+
   const startRecording = async () => {
     try {
       setError(null);
@@ -125,6 +200,7 @@ export function AIVoiceInput({
       setIsProcessing(true);
       setIsRecording(true);
       setSubmitted(true);
+      setProcessingStatus("recording");
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
@@ -143,6 +219,7 @@ export function AIVoiceInput({
 
       mediaRecorder.onstop = async () => {
         try {
+          setProcessingStatus("transcribing");
           const audioBlob = new Blob(audioChunks, {
             type: "audio/webm;codecs=opus",
           });
@@ -184,13 +261,16 @@ export function AIVoiceInput({
                 if (data.transcript) {
                   setTranscript(data.transcript);
                   onTranscript?.(data.transcript);
+                  setProcessingStatus("processing");
                 }
                 if (data.response) {
                   setResponse(data.response);
                   onResponse?.(data.response);
+                  setProcessingStatus("synthesizing");
                 }
                 if (data.audioUrl) {
                   onAudioResponse?.(data.audioUrl);
+                  setProcessingStatus("playing");
                   if (audioRef.current) {
                     audioRef.current.src = data.audioUrl;
                     audioRef.current.play().catch((error) => {
@@ -217,12 +297,14 @@ export function AIVoiceInput({
           }
 
           setIsProcessing(false);
+          setProcessingStatus("idle");
         } catch (error) {
           const networkError = handleNetworkError(error);
           errorBoundaryRef.current.handleError(networkError);
           setIsProcessing(false);
           setIsRecording(false);
           setSubmitted(false);
+          setProcessingStatus("error");
         }
       };
 
@@ -232,6 +314,7 @@ export function AIVoiceInput({
         setIsProcessing(false);
         setIsRecording(false);
         setSubmitted(false);
+        setProcessingStatus("error");
       };
 
       mediaRecorder.start(100);
@@ -241,6 +324,7 @@ export function AIVoiceInput({
       setIsProcessing(false);
       setIsRecording(false);
       setSubmitted(false);
+      setProcessingStatus("error");
     }
   };
 
@@ -253,7 +337,6 @@ export function AIVoiceInput({
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
       setIsRecording(false);
       setSubmitted(false);
-      setIsProcessing(false);
     }
   };
 
@@ -274,9 +357,7 @@ export function AIVoiceInput({
         <button
           className={cn(
             "group w-16 h-16 rounded-xl flex items-center justify-center transition-colors",
-            submitted
-              ? "bg-none"
-              : "bg-none hover:bg-black/10 dark:hover:bg-white/10"
+            getButtonColor()
           )}
           type="button"
           onClick={handleClick}
@@ -284,7 +365,7 @@ export function AIVoiceInput({
           {submitted ? (
             <div
               className="w-6 h-6 rounded-sm animate-spin bg-black dark:bg-white cursor-pointer pointer-events-auto"
-              style={{ animationDuration: "3s" }}
+              style={{ animationDuration: "1.5s" }}
             />
           ) : (
             <Mic className="w-6 h-6 text-black/70 dark:text-white/70" />
@@ -310,7 +391,7 @@ export function AIVoiceInput({
                 "w-0.5 rounded-full transition-all duration-300",
                 submitted
                   ? "bg-black/50 dark:bg-white/50 animate-pulse"
-                  : "bg-black/10 dark:bg-white/10 h-1"
+                  : "bg-black/10 dark:text-white/10 h-1"
               )}
               style={
                 submitted && isClient
@@ -324,13 +405,26 @@ export function AIVoiceInput({
           ))}
         </div>
 
-        <p className="h-4 text-xs text-black/70 dark:text-white/70">
-          {isProcessing
-            ? "Processing..."
-            : submitted
-            ? "Listening..."
-            : "Click to speak"}
-        </p>
+        <div className="flex flex-col items-center gap-1">
+          <p
+            className={cn(
+              "h-4 text-xs transition-colors duration-300",
+              getStatusColor()
+            )}
+          >
+            {getStatusMessage()}
+          </p>
+          {(processingStatus === "transcribing" ||
+            processingStatus === "processing" ||
+            processingStatus === "synthesizing") && (
+            <div className="w-32 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 animate-pulse rounded-full"
+                style={{ width: "100%" }}
+              />
+            </div>
+          )}
+        </div>
 
         {transcript && (
           <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg max-w-md">
@@ -341,9 +435,9 @@ export function AIVoiceInput({
         )}
 
         {response && (
-          <div className="mt-2 p-3 bg-blue-100 dark:bg-blue-900 rounded-lg max-w-md">
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              <strong>AI:</strong> {response}
+          <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg max-w-md">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              <strong>AI Response:</strong> {response}
             </p>
           </div>
         )}

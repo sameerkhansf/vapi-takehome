@@ -62,7 +62,6 @@ export default function Home() {
             Speak naturally - I&apos;ll listen, understand, and respond
           </p>
 
-          {/* Error Display */}
           {error && (
             <div
               className="mb-6 bg-error/10 border border-error text-error px-4 py-3 rounded-lg shadow-sm"
@@ -101,12 +100,42 @@ export default function Home() {
             />
           </div>
 
-          <div className="mt-8 text-center text-sm text-gray-600">
-            <p>
-              💡 Tip: Click the microphone and speak naturally. The AI will
-              respond with voice.
-            </p>
+          <div className="mt-8 space-y-4">
+            <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+              <p className="mb-2">
+                💡 <strong>How it works:</strong>
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                  <div className="font-semibold text-primary mb-1">
+                    1. Speak
+                  </div>
+                  <div>Click the microphone and speak naturally</div>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                  <div className="font-semibold text-primary mb-1">
+                    2. Process
+                  </div>
+                  <div>AI transcribes, understands, and responds</div>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                  <div className="font-semibold text-primary mb-1">
+                    3. Listen
+                  </div>
+                  <div>Hear the AI response in natural speech</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center text-xs text-gray-500 dark:text-gray-400">
+              <p>
+                Powered by Google Cloud Speech-to-Text, Vertex AI, and
+                Text-to-Speech
+              </p>
+            </div>
           </div>
+
+          <div ref={conversationEndRef} />
         </div>
       </div>
     </AuroraBackground>
