@@ -8,42 +8,42 @@ module.exports = {
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
-    "./src/**/*.{ts,tsx}", // Added for new components
+    "./src/**/*.{ts,tsx}",
   ],
-  darkMode: "class", // Added for dark mode support
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#4F46E5', // Indigo-600
-          light: '#6366F1', // Indigo-500
-          dark: '#4338CA', // Indigo-700
+          DEFAULT: '#4F46E5',
+          light: '#6366F1',
+          dark: '#4338CA',
         },
         secondary: {
-          DEFAULT: '#6B7280', // Gray-500
-          light: '#9CA3AF', // Gray-400
-          dark: '#4B5563', // Gray-600
+          DEFAULT: '#6B7280',
+          light: '#9CA3AF',
+          dark: '#4B5563',
         },
         accent: {
-          DEFAULT: '#06B6D4', // Cyan-500
-          light: '#22D3EE', // Cyan-400
-          dark: '#0891B2', // Cyan-600
+          DEFAULT: '#06B6D4',
+          light: '#22D3EE',
+          dark: '#0891B2',
         },
         background: {
-          DEFAULT: '#F9FAFB', // Gray-50
-          dark: '#1F2937', // Gray-800
+          DEFAULT: '#F9FAFB',
+          dark: '#1F2937',
         },
         surface: {
-          DEFAULT: '#FFFFFF', // White
-          dark: '#374151', // Gray-700
+          DEFAULT: '#FFFFFF',
+          dark: '#374151',
         },
         border: {
-          DEFAULT: '#E5E7EB', // Gray-200
-          dark: '#4B5563', // Gray-600
+          DEFAULT: '#E5E7EB',
+          dark: '#4B5563',
         },
-        success: '#10B981', // Green-500
-        error: '#EF4444', // Red-500
-        warning: '#F59E0B', // Yellow-500
+        success: '#10B981',
+        error: '#EF4444',
+        warning: '#F59E0B',
       },
       animation: {
         aurora: "aurora 60s linear infinite",
@@ -60,10 +60,9 @@ module.exports = {
       },
     },
   },
-  plugins: [addVariablesForColors], // Added plugin
+  plugins: [addVariablesForColors],
 };
 
-// This plugin adds each Tailwind color as a global CSS variable, e.g. var(--gray-200).
 function addVariablesForColors({ addBase, theme }) {
   let allColors = flattenColorPalette(theme("colors"));
   let newVars = Object.fromEntries(

@@ -13,12 +13,10 @@ export default function Home() {
   const [isClient, setIsClient] = useState(false);
   const conversationEndRef = useRef<HTMLDivElement>(null);
 
-  // Check if we're on the client side
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     conversationEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation]);

@@ -143,9 +143,10 @@ export function AIVoiceInput({
 
       mediaRecorder.onstop = async () => {
         try {
-          const audioBlob = new Blob(audioChunks, { type: "audio/webm;codecs=opus" });
-          
-          // Send the audio blob to the API
+          const audioBlob = new Blob(audioChunks, {
+            type: "audio/webm;codecs=opus",
+          });
+
           const response = await fetch("/api/voice", {
             method: "POST",
             body: audioBlob,
@@ -174,7 +175,6 @@ export function AIVoiceInput({
             const chunk = decoder.decode(value, { stream: true });
             accumulatedResponse += chunk;
 
-            // Process each JSON object in the stream
             const lines = accumulatedResponse.split("\n");
             for (let i = 0; i < lines.length - 1; i++) {
               const line = lines[i];
@@ -190,7 +190,6 @@ export function AIVoiceInput({
                   onResponse?.(data.response);
                 }
                 if (data.audioUrl) {
-                  console.log("Received audioUrl:", data.audioUrl); // Added for debugging
                   onAudioResponse?.(data.audioUrl);
                   if (audioRef.current) {
                     audioRef.current.src = data.audioUrl;
@@ -200,7 +199,10 @@ export function AIVoiceInput({
                   }
                 }
                 if (data.error) {
-                  throw new VoiceAIError(data.error, data.code || "UNKNOWN_ERROR");
+                  throw new VoiceAIError(
+                    data.error,
+                    data.code || "UNKNOWN_ERROR"
+                  );
                 }
               } catch (parseError) {
                 console.error(
@@ -232,7 +234,7 @@ export function AIVoiceInput({
         setSubmitted(false);
       };
 
-      mediaRecorder.start(100); // Collect 100ms of data at a time
+      mediaRecorder.start(100);
     } catch (error) {
       const networkError = handleNetworkError(error);
       errorBoundaryRef.current.handleError(networkError);

@@ -5,25 +5,15 @@ export class TextToSpeechService {
   private client: TextToSpeechClient;
 
   constructor() {
-    // Validate required environment variables
     if (!process.env.GOOGLE_CLOUD_PROJECT_ID) {
       throw new Error('GOOGLE_CLOUD_PROJECT_ID environment variable is required');
     }
     
-    console.log('TextToSpeechService: Initializing with project:', process.env.GOOGLE_CLOUD_PROJECT_ID);
-    
     this.client = new TextToSpeechClient();
-    
-    console.log('TextToSpeechService: Client initialized successfully');
   }
 
   async synthesizeSpeech(text: string, voiceName?: string): Promise<Buffer> {
-    console.log('TextToSpeechService: Starting synthesizeSpeech with text length:', text.length);
-    console.log('TextToSpeechService: Text preview:', text.substring(0, 50) + '...');
-    
-    // Validate input text
     if (!text || text.trim().length === 0) {
-      console.log('TextToSpeechService: Empty text input, throwing error');
       throw new Error('Text input cannot be empty');
     }
 
@@ -39,10 +29,7 @@ export class TextToSpeechService {
     const targetVoice = voiceName || fallbackVoices[0];
     const cleanText = text.trim();
     
-    console.log('TextToSpeechService: Using voice:', targetVoice);
-    
     try {
-      console.log('TextToSpeechService: Calling client.synthesizeSpeech...');
       const [response] = await this.client.synthesizeSpeech({
         input: { text: cleanText },
         voice: {
@@ -57,17 +44,13 @@ export class TextToSpeechService {
         },
       });
 
-      console.log('TextToSpeechService: synthesizeSpeech completed, audio content length:', response.audioContent?.length || 0);
       return response.audioContent as Buffer;
     } catch (error: any) {
-      console.log('TextToSpeechService: Primary voice failed, trying fallbacks...');
-      // Try fallback voices if the primary voice fails
       if (error.code === 3 && error.details?.includes('does not exist')) {
         for (const fallbackVoice of fallbackVoices) {
-          if (fallbackVoice === targetVoice) continue; // Skip the already tried voice
+          if (fallbackVoice === targetVoice) continue;
           
           try {
-            console.log('TextToSpeechService: Trying fallback voice:', fallbackVoice);
             const [response] = await this.client.synthesizeSpeech({
               input: { text: cleanText },
               voice: {
@@ -82,7 +65,6 @@ export class TextToSpeechService {
               },
             });
 
-            console.log(`TextToSpeechService: Fallback voice ${fallbackVoice} succeeded`);
             return response.audioContent as Buffer;
           } catch (fallbackError) {
             console.warn(`TextToSpeechService: Fallback voice ${fallbackVoice} also failed:`, fallbackError);
