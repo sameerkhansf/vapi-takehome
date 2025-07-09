@@ -9,7 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@vapi-ai/web": "^2.3.8",
+    "@google-cloud/speech": "^7.1.0",
+    "@google-cloud/text-to-speech": "^6.1.0",
+    "@google-cloud/vertexai": "^1.10.0",
     "autoprefixer": "^10.4.21",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.1",

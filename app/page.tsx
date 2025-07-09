@@ -1,20 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Vapi from "@vapi-ai/web";
 import { AuroraBackground } from "@/components/ui/aurora-background";
 import { AIVoiceInput } from "@/components/ui/ai-voice-input";
-
-// Initialize VAPI client with public key only
-const vapi = new Vapi(process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY!);
+import { VoiceAIError } from "@/lib/error-handler";
 
 export default function Home() {
-  const [isCallActive, setIsCallActive] = useState(false);
   const [conversation, setConversation] = useState<
     Array<{ role: string; transcript: string; timestamp: Date; id: string }>
   >([]);
-  const [callStatus, setCallStatus] = useState<string>("Ready to start");
-  const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
   const conversationEndRef = useRef<HTMLDivElement>(null);
@@ -29,216 +23,35 @@ export default function Home() {
     conversationEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation]);
 
-  // Handle VAPI client events
-  useEffect(() => {
-    if (!isClient) return;
-
-    const handleCallStart = () => {
-      try {
-        setIsCallActive(true);
-        setCallStatus("Connected - You can speak now");
-        setIsConnecting(false);
-        setError(null);
-        setConversation([]); // Clear conversation on new call
-      } catch (error) {
-        console.error("Error in call start handler:", error);
-        setError("Failed to start call properly");
-      }
-    };
-
-    const handleCallEnd = () => {
-      try {
-        setIsCallActive(false);
-        setCallStatus("Call ended");
-        setIsConnecting(false);
-      } catch (error) {
-        console.error("Error in call end handler:", error);
-        setError("Error ending call");
-      }
-    };
-
-    const handleMessage = (message: any) => {
-      try {
-        console.log("VAPI message:", message); // Debug log
-
-        // Only process final transcripts to avoid duplicates
-        if (
-          message.type === "transcript" &&
-          message.transcriptType === "final"
-        ) {
-          const messageId = `${message.role}-${
-            message.transcript
-          }-${Date.now()}`;
-
-          setConversation((prev) => {
-            // Check if message already exists to prevent duplicates
-            const existingMessage = prev.find(
-              (msg) =>
-                msg.role === message.role &&
-                msg.transcript === message.transcript &&
-                Math.abs(new Date().getTime() - msg.timestamp.getTime()) < 5000 // Within 5 seconds
-            );
-
-            if (existingMessage) {
-              return prev; // Don't add duplicate
-            }
-
-            return [
-              ...prev,
-              {
-                role: message.role,
-                transcript: message.transcript,
-                timestamp: new Date(),
-                id: messageId,
-              },
-            ];
-          });
-        }
-
-        if (message.type === "conversation-update") {
-          setCallStatus("Processing your request...");
-        }
-      } catch (error) {
-        console.error("Error processing message:", error);
-        setError("Error processing message");
-      }
-    };
-
-    const handleSpeechStart = () => {
-      try {
-        setCallStatus("Listening...");
-      } catch (error) {
-        console.error("Error in speech start handler:", error);
-      }
-    };
-
-    const handleSpeechEnd = () => {
-      try {
-        setCallStatus("Processing...");
-      } catch (error) {
-        console.error("Error in speech end handler:", error);
-      }
-    };
-
-    const handleError = (error: any) => {
-      try {
-        console.error("VAPI error:", error);
-
-        // Don't show audio processor errors to user
-        if (!error.message?.includes("audio processor")) {
-          setError(`Connection error: ${error.message || "Unknown error"}`);
-          setIsCallActive(false);
-          setIsConnecting(false);
-        }
-      } catch (handlerError) {
-        console.error("Error in error handler:", handlerError);
-      }
-    };
-
-    // Add event listeners
-    try {
-      vapi.on("call-start", handleCallStart);
-      vapi.on("call-end", handleCallEnd);
-      vapi.on("message", handleMessage);
-      vapi.on("speech-start", handleSpeechStart);
-      vapi.on("speech-end", handleSpeechEnd);
-      vapi.on("error", handleError);
-    } catch (error) {
-      console.error("Error setting up VAPI event listeners:", error);
-      setError("Failed to initialize voice assistant");
-    }
-
-    // Cleanup
-    return () => {
-      try {
-        vapi.off("call-start", handleCallStart);
-        vapi.off("call-end", handleCallEnd);
-        vapi.off("message", handleMessage);
-        vapi.off("speech-start", handleSpeechStart);
-        vapi.off("speech-end", handleSpeechEnd);
-        vapi.off("error", handleError);
-        vapi.stop();
-      } catch (error) {
-        console.error("Error during cleanup:", error);
-      }
-    };
-  }, [isClient]);
-
-  const startCall = async () => {
-    if (!isClient) return;
-
-    setIsConnecting(true);
-    setCallStatus("Connecting...");
-    setError(null);
-
-    try {
-      const assistantConfig = {
-        model: {
-          provider: "openai" as const,
-          model: "gpt-4o-mini" as const,
-          messages: [
-            {
-              role: "system" as const,
-              content:
-                "You are a helpful voice assistant. Keep your responses concise and natural for speech. You can help with questions, tasks, and general conversation.",
-            },
-          ],
-          temperature: 0.7,
-          maxTokens: 250,
-        },
-        voice: {
-          provider: "11labs" as const,
-          voiceId: "21m00Tcm4TlvDq8ikWAM",
-        },
-        transcriber: {
-          provider: "deepgram" as const,
-          model: "nova-2",
-          language: "en-US" as const,
-        },
-      };
-
-      // Start the call using the client SDK (for real-time functionality)
-      await vapi.start(assistantConfig);
-    } catch (error) {
-      console.error("Failed to start call:", error);
-      setCallStatus("Failed to connect");
-      setIsConnecting(false);
-      setError(
-        `Failed to start call: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
-    }
+  const handleTranscript = (transcript: string) => {
+    const messageId = `user-${transcript}-${Date.now()}`;
+    setConversation((prev) => [
+      ...prev,
+      {
+        role: "user",
+        transcript,
+        timestamp: new Date(),
+        id: messageId,
+      },
+    ]);
   };
 
-  const endCall = () => {
-    try {
-      setCallStatus("Ending call...");
-      vapi.stop();
-    } catch (error) {
-      console.error("Error ending call:", error);
-      setError("Error ending call");
-      setIsCallActive(false);
-      setIsConnecting(false);
-    }
+  const handleResponse = (response: string) => {
+    const messageId = `assistant-${response}-${Date.now()}`;
+    setConversation((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        transcript: response,
+        timestamp: new Date(),
+        id: messageId,
+      },
+    ]);
   };
 
-  // Check for required environment variables
-  if (isClient && !process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gray-50">
-        <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
-          <div className="bg-red-500/90 backdrop-blur-sm rounded-2xl p-6 text-white text-center">
-            <div className="font-medium mb-2">Setup Required</div>
-            <div className="text-sm opacity-90">
-              Please set your VAPI public key in the environment variables
-              (NEXT_PUBLIC_VAPI_PUBLIC_KEY).
-            </div>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  const handleError = (error: VoiceAIError) => {
+    setError(error.message);
+  };
 
   return (
     <AuroraBackground>
@@ -282,22 +95,11 @@ export default function Home() {
 
         <div className="flex flex-col items-center mb-8">
           <AIVoiceInput
-            onStart={startCall}
-            onStop={(duration) => {
-              endCall();
-              console.log(`Call ended after ${duration} seconds`);
-            }}
-            demoMode={false} // Set to true for demo mode
+            onTranscript={handleTranscript}
+            onResponse={handleResponse}
+            onError={handleError}
+            demoMode={false}
           />
-          <div className="text-center">
-            <p
-              className={`text-lg font-semibold ${
-                isCallActive ? "text-success" : "text-secondary-DEFAULT"
-              }`}
-            >
-              {callStatus}
-            </p>
-          </div>
         </div>
 
         <div className="bg-surface-DEFAULT rounded-xl p-6 max-h-96 overflow-y-auto border border-border-DEFAULT shadow-inner">
@@ -320,11 +122,10 @@ export default function Home() {
                   <div
                     className={`max-w-xs lg:max-w-md px-5 py-3 rounded-2xl shadow-md ${
                       message.role === "user"
-                        ? "bg-primary text-white rounded-br-none" // User message style
-                        : "bg-secondary-light text-secondary-dark rounded-bl-none"
+                        ? "bg-blue-500 text-white rounded-br-none"
+                        : "bg-gray-200 text-gray-800 rounded-bl-none"
                     }`}
                   >
-                    (
                     <p className="text-sm font-medium mb-1 opacity-90">
                       {message.role === "user" ? "You" : "Assistant"}
                     </p>
@@ -340,10 +141,9 @@ export default function Home() {
           )}
         </div>
 
-        <div className="mt-8 text-center text-sm text-secondary-DEFAULT">
+        <div className="mt-8 text-center text-sm text-gray-600">
           <p>
-            💡 Tip: Click &quot;Start Voice Chat&quot; and speak naturally. The
-            AI will respond with voice.
+            💡 Tip: Click the microphone and speak naturally. The AI will respond with voice.
           </p>
         </div>
       </div>
