@@ -31,10 +31,12 @@ export class VertexAIService {
   }
 
   async generateResponse(prompt: string): Promise<string> {
-    console.log('VertexAIService: Starting generateResponse with prompt:', prompt.substring(0, 100) + '...');
+    const systemInstruction = "Respond in plain English, without any Markdown, bullet points, asterisks, or special formatting. Write as if you are speaking naturally.";
+    const fullPrompt = `${systemInstruction}\n\n${prompt}`;
+    console.log('VertexAIService: Starting generateResponse with prompt:', fullPrompt.substring(0, 100) + '...');
     try {
       console.log('VertexAIService: Calling model.generateContent...');
-      const result = await this.model.generateContent(prompt);
+      const result = await this.model.generateContent(fullPrompt);
       console.log('VertexAIService: generateContent completed, processing response...');
       
       const response = result.response;
