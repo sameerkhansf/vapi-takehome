@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Vapi from "@vapi-ai/web";
+import { AuroraBackground } from "@/components/ui/aurora-background";
 
 // Initialize VAPI client with public key only
 const vapi = new Vapi(process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY!);
@@ -239,25 +240,39 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gray-50">
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
-        <h1 className="text-4xl font-bold mb-2 text-center text-gray-800">
+    <AuroraBackground>
+      <div className="max-w-2xl w-full bg-surface-DEFAULT rounded-xl shadow-xl p-8 border border-border-DEFAULT">
+        <h1 className="text-4xl font-extrabold mb-2 text-center text-primary-dark">
           Voice AI Assistant
         </h1>
-        <p className="text-center text-gray-600 mb-8">
+        <p className="text-center text-secondary-DEFAULT mb-8">
           Speak naturally - I&apos;ll listen, understand, and respond
         </p>
 
         {/* Error Display */}
         {error && (
-          <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <div
+            className="mb-6 bg-error/10 border border-error text-error px-4 py-3 rounded-lg shadow-sm"
+            role="alert"
+          >
             <div className="flex items-center">
-              <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
-              <span className="text-sm">{error}</span>
+              <svg
+                className="w-5 h-5 mr-2"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                ></path>
+              </svg>
+              <span className="text-sm font-medium">{error}</span>
             </div>
             <button
               onClick={() => setError(null)}
-              className="text-red-500 hover:text-red-700 text-xs mt-1 underline"
+              className="text-error hover:text-error-dark text-xs mt-2 underline focus:outline-none focus:ring-2 focus:ring-error focus:ring-opacity-50"
             >
               Dismiss
             </button>
@@ -267,12 +282,12 @@ export default function Home() {
         <div className="flex flex-col items-center mb-8">
           <div className="mb-4">
             <button
-              className={`px-12 py-4 rounded-full text-white font-bold text-lg transition-all duration-300 ${
+              className={`px-12 py-4 rounded-full text-white font-bold text-lg transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-primary-light focus:ring-opacity-50 ${
                 isCallActive
-                  ? "bg-red-500 hover:bg-red-600 shadow-lg"
+                  ? "bg-error hover:bg-error-dark shadow-lg"
                   : isConnecting
-                  ? "bg-yellow-500 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-600 shadow-lg"
+                  ? "bg-warning cursor-not-allowed animate-pulse"
+                  : "bg-primary hover:bg-primary-dark shadow-lg"
               }`}
               onClick={isCallActive ? endCall : startCall}
               disabled={isConnecting}
@@ -287,8 +302,8 @@ export default function Home() {
 
           <div className="text-center">
             <p
-              className={`text-lg font-medium ${
-                isCallActive ? "text-green-600" : "text-gray-600"
+              className={`text-lg font-semibold ${
+                isCallActive ? "text-success" : "text-secondary-DEFAULT"
               }`}
             >
               {callStatus}
@@ -296,12 +311,12 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="bg-gray-100 rounded-lg p-6 max-h-96 overflow-y-auto">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">
+        <div className="bg-surface-DEFAULT rounded-xl p-6 max-h-96 overflow-y-auto border border-border-DEFAULT shadow-inner">
+          <h3 className="text-xl font-semibold mb-4 text-primary-dark">
             Conversation
           </h3>
           {conversation.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
+            <p className="text-secondary-light text-center py-8 italic">
               No conversation yet. Start a call to begin chatting!
             </p>
           ) : (
@@ -314,16 +329,17 @@ export default function Home() {
                   }`}
                 >
                   <div
-                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    className={`max-w-xs lg:max-w-md px-5 py-3 rounded-2xl shadow-md ${
                       message.role === "user"
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-200 text-gray-800"
+                        ? "bg-primary text-white rounded-br-none" // User message style
+                        : "bg-secondary-light text-secondary-dark rounded-bl-none"
                     }`}
                   >
-                    <p className="text-sm font-medium mb-1">
+                    (
+                    <p className="text-sm font-medium mb-1 opacity-90">
                       {message.role === "user" ? "You" : "Assistant"}
                     </p>
-                    <p>{message.transcript}</p>
+                    <p className="text-base">{message.transcript}</p>
                     <p className="text-xs opacity-75 mt-1">
                       {message.timestamp.toLocaleTimeString()}
                     </p>
@@ -335,13 +351,13 @@ export default function Home() {
           )}
         </div>
 
-        <div className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-8 text-center text-sm text-secondary-DEFAULT">
           <p>
             💡 Tip: Click &quot;Start Voice Chat&quot; and speak naturally. The
             AI will respond with voice.
           </p>
         </div>
       </div>
-    </main>
+    </AuroraBackground>
   );
 }
