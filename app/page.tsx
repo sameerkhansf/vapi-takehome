@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Vapi from "@vapi-ai/web";
 import { AuroraBackground } from "@/components/ui/aurora-background";
+import { AIVoiceInput } from "@/components/ui/ai-voice-input";
 
 // Initialize VAPI client with public key only
 const vapi = new Vapi(process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY!);
@@ -280,26 +281,14 @@ export default function Home() {
         )}
 
         <div className="flex flex-col items-center mb-8">
-          <div className="mb-4">
-            <button
-              className={`px-12 py-4 rounded-full text-white font-bold text-lg transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-primary-light focus:ring-opacity-50 ${
-                isCallActive
-                  ? "bg-error hover:bg-error-dark shadow-lg"
-                  : isConnecting
-                  ? "bg-warning cursor-not-allowed animate-pulse"
-                  : "bg-primary hover:bg-primary-dark shadow-lg"
-              }`}
-              onClick={isCallActive ? endCall : startCall}
-              disabled={isConnecting}
-            >
-              {isConnecting
-                ? "Connecting..."
-                : isCallActive
-                ? "🔴 End Call"
-                : "🎤 Start Voice Chat"}
-            </button>
-          </div>
-
+          <AIVoiceInput
+            onStart={startCall}
+            onStop={(duration) => {
+              endCall();
+              console.log(`Call ended after ${duration} seconds`);
+            }}
+            demoMode={false} // Set to true for demo mode
+          />
           <div className="text-center">
             <p
               className={`text-lg font-semibold ${
